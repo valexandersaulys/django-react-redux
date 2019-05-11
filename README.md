@@ -140,5 +140,192 @@ top level from react. These will be very simple for now -- we'll fill
 them out later. 
 
 
+## Video \# 3
+
+We'll implement redux here. This will allow us to have a golden source
+of state to store all of our information.
+
+We'll start by installing a few packages from NPM:
+
+```shell
+$ npm i -D redux react-redux redux-thunk redux-devtools-extension
+```
+
+Typically, one starts by creating their store file for redux, which
+holds all of our state. For making debugging easier, we'll use
+`redux-devtools-extensions` which makes the `store.js` file a bit more
+unique.
+
+`src/reducers` will then be created. An `index.js` file is added as a
+root file. For now, this will be virtually blank.
+
+Going back to `components/App.js`, we'll add the necesary code to
+connect redux to our app.
+
+If we pull up this app on our page, we can see that redux tools now
+appears. This extension is pretty neat as it allows us to inspect
+state while building the app!
+
+Going back to our `reducers/index.js`, let's create the necesary
+imports then the necesary files for those imports to work.
+
+Reducers evaluate actions and then send down the necesary state. They
+evaluate types to do this. It's best practice to keep these in a
+separate folder and file called `actions`. 
+
+Our reducers object will export a function that takes in the current
+state and action. It then uses a switch function to evaluate which
+action happened and, once found, passes that down to the correct
+reducer for state change. State will change here typically here, and
+is returned from that exported function.
+
+We include whatever is already in the state with a spread operator
+`...` and, if we specify conflicting keys, we can replace whatever was
+in that state.
+
+Once we have our reducer object done, we can go to action. It is here
+that our components will call actions (vis-a-vis functions), modify
+the state, and return the result.
+
+For organizational purposes, the name for actions will be the same as
+in reducers.
+
+Now we'll create a mapping file called `leads.js` within actions that
+does all the requesting. We'll add `axios` to our npm. The first
+function we add will be an exported function `getLeads` and it will
+return an object that gets modified.
+
+Because we're using `thunk`, as the request is async, we'll pass
+through `dispatch` as well. I presume the below notation passes
+through dispatch before processing. 
+
+```javascript
+export const thing = () => dispatch => {
+  axios.get(....)
+};
+```
+
+In our action, we want to dispatch the result to our reducer. This
+involves calling `dispatch` along with a `type` and `payload`. The
+result is that `type` w/e gets called and the passed `payload` is
+processed on our store.
+
+Now we have our actions being propagated! We just need to connect this
+up to our component itself.
+
+Going back to `src/components/leads/Leads.js`, we'll add some imports
+for redux. We'll also add `PropTypes` from library `prop-types`.
+
+As a first step, we wrap our exported component with `connect`. To
+access our state, we need to map it to a component property. This is
+done with an arrow function called `mapStateToProps`. You can see this
+inside of `components/leads/Leads.js`. This is where `propTypes` comes
+in, as we can set those as well.
+
+We can also pass in the `getLeads` action within our connect function
+to properly hook that up as well. 
+
+The end result -- looking only at the end of the file -- results in:
+
+```javascript
+const mapStateToProps = state => ({
+    leads: state.leads.leads
+});
+
+export default connect(
+  mapStateToProps,
+  { getLeads } 
+)(Leads);
+```
+
+You can see the state now reflected in redux tools. However, it's not
+being called. To do that, we'll need to add it to
+`componentDidMount()`, a lifecycle function within React
+components. Here, we can directly call the function.
+
+Then, we'll rewrite `render`. As we have a default state that is mapped
+via `this.props` we can call `this.props.leads` as we mapped in
+`mapStateToProps`. By using `Fragment` tags we can add further
+components later or modify the existing one to include lists (I think
+you need Fragment for this?). Note that each sub-jsx bit within our
+rendered list will need a key, typically the id.
+
+```javascript
+{ this.props.leads.map(lead => (
+                      <tr key={lead.id}>
+                        <td>{lead.id}</td>
+                        <td>{lead.name}</td>
+                        <td>{lead.email}</td>
+                        <td>{lead.message}</td>
+                      </tr>
+                  )) }
+```
+
+The end result looks like:
+
+![](doc-images/vid3-1.png)
+
+Neat! Now we'll add a delete lead action and have that modify the
+corresponding lead. We'll create the action, then the type, then add
+in the necesary code on the reducer.
+
+Note that this action will delete the lead on our local
+computer. Instead, it will send the necesary request to delete it on
+the server. This marks an important difference: we need ot have our
+reducer take care of that by running `filter`:
+
+```javascript
+// reducers/leads.js
+    case DELETE_LEAD:
+        return {
+            ...state,
+            leads: state.leads.filter(lead => lead.id !== action.payload)
+        }
+```
+
+One interesting aspect here is that when creating the button, we use
+`this.props.deleteLead.bind(this, lead.id)}`. Presumably this is to
+ensure that our `deleteLead` function is taking in the id(?)
+
+We'll also add these connected functions as prop-types. 
+
+Now we'll add an `addLead` form. This will start with the component in
+`components/leads/Forms.js`. First we give it an initial state, then
+we pull out those sub pieces in the render function.
+
+```javascript
+// within our render(), we can pull out specific values this way
+const { name, email, message } = this.state;
+```
+
+Our Form component will have two aspects: one for changes and one for
+submissions.
+
+The one for changes will simply change the values in question. This
+looks wonky in React JS:
+
+```javascript
+onChange = e => this.setState({ [e.target.name]: e.target.value })
+```
+
+`onSubmit` will call our action to submit a new lead. First we create
+the action, then the type, then the reducer -- as always.
+
+Using spread operators, we can write very compact and readable
+reducers as seen below:
+
+```javascript
+    case ADD_LEAD:
+        return {
+            ...state,
+            leads: [...state.leads, action.payload]
+        };
+```
+
+Because we are not using properties for state in our `Form` component,
+we can pass in a null value when connecting. 
+
+
+
 
 
