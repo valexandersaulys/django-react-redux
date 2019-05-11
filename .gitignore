@@ -1,0 +1,8 @@
+*#
+#*
+*~
+~*
+leadmanager/db.sqlite3
+Pipfile.lock
+*.db
+*.pyc
