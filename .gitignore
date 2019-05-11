@@ -4,5 +4,6 @@
 ~*
 leadmanager/db.sqlite3
 Pipfile.lock
+node_modules/*
 *.db
 *.pyc
