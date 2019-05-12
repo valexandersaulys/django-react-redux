@@ -323,7 +323,130 @@ reducers as seen below:
 ```
 
 Because we are not using properties for state in our `Form` component,
-we can pass in a null value when connecting. 
+we can pass in a null value when connecting the requisite
+function. Don't forget to specify type for this function with
+`PropTypes`.
+
+
+## Video \# 4
+
+Now we'll add alerts.
+
+To do this, we need to add the appropriate library for react js. We'll
+install `react-alert`, `react-alert-template-basic`, 
+`react-transition-group`. This allows us to pull in a function and
+wrap our components with it, giving them the ability to call alerts.
+
+Now we'll add our alert provider within the `App.js` file. This will
+be an app component that wraps everything (though we still want to
+keep our storage provider as the outer most). We'll need to specify
+options and a template. The former we'll create as `alertOptions` and
+the latter will be pulled from `react-alert-template-basic`.
+
+Next, we'll create a component for alerts. This will be a simple class
+based component that returns almost nothing (just a fragment) but
+calls an alert at load and is exported with `withAlert(...)`. We'll
+add if-else statements later on to get this well.
+
+Then we'll need to create reducers that call this component when
+necesary. 
+
+The reducer will be simple, stored in `reducers/errors.js`. For now,
+just a `GET_ERRORS`. Unlike the other actions, we'll simply dispatch
+from the leads actions. They will call the requisite reducer action,
+which will trigger an alert.
+
+Let's go back to `components/layout/Alerts.js`. Like before, let's
+connect the state to our component. Instead of using
+`componentDidMount`, which gets called once at instantiation of the
+component, let's use `componentDidUpdate`. Because of the life cycles
+of using React JS, this function will be better as it's called
+multiple times.
+
+`componentDidUpdate` takes a variable called `prevProps`. We'll use
+this to check against the current state. If they've differed, then we
+have problems. 
+
+Note to self: `react-alert` had some major change from 4.x to 5.x. The
+video uses the former while a blind install from npm will install the
+former. The former will give weird esoteric errors I have not been
+able to track down so keep that in mind.
+
+__I stopped at this point, he also installs a messages error handling
+which looked like overkill__
+
+_PPS: I still don't get where the hell state.message and state.errors
+comes from given we never add it like that_
+
+
+## Video \# 5
+
+Now we'll do token authenticaton (woo!)
+
+This will start by going back to the backend in Django. We'll go to
+our `leads/model.py` and bring in the User model, default from
+Django. Then we'll link the our `Lead` model with our `User` model
+using `owner=models.ForeignKey(User, ...)`.
+
+After adding a `models.ForeignKey`, we'll run `makemigrations` and
+`migrate`. 
+
+Inside of `leads/api.py`, we can change this up to accomodate our new
+permission class. First, we need to change `queryset` which, because
+we only want to grab those owned by the user, we'll use a function.
+
+```python
+    def get_queryset(self):
+        return self.request.user.leads.all();
+```
+
+Lastly, we need to swap out the `perform_create` function from its
+default. This new function we define will take in a `serializer`
+parameter and call `serializer.save(owner=self.request.user)` so that
+the corresponding owner of that lead will get saved.
+
+There are a couple of things to do inside of `settings.py`. First, a
+new value will be added for `REST_FRAMEWORK` so that it knows we want
+to use Knox authentication. Next, we need to add in `knox` to our
+installed apps. 
+
+```python
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthencation',)
+}
+```
+
+Following all this, we'll run a migration so knox can update itself.
+
+Now we'll create an accounts app. This will be used for logging and
+registering new users via the REST API.
+
+Each action will get it's own serializer. Remember that we create
+serializers followed by api (in this case no models needed).
+
+For the `RegisterSerializer`, we'll override the `create` function and
+add in some extra code to deal with validating the creation of a new
+user. Know that User objects have their passwords salted, so this is
+part of that process.
+
+Then we need apis. These are in `accounts/api.py`, which will use
+generics where each function computes the name of the request
+(ex. `post()` handles POST requests). There is a slight change here in
+that `AuthToken.objects.create(user)` needs to be called manually. 
+
+Lastly, we'll add in `urls.py` and punch in the appropriate bits,
+adding into our master urls at `leadmanager/urls.py`.
+
+Note that when testing this you'll want to add the `Authorization`
+header with `Token <insert-token>` from the login, _no quotes_. 
+
+For our log out URL, we'll borrow from Knox via
+`knox_views.LogoutView.as_view()`. This will cause the token to be
+invalidated.
+
+
+
+
 
 
 
