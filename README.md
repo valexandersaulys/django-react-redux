@@ -445,10 +445,97 @@ For our log out URL, we'll borrow from Knox via
 invalidated.
 
 
+## Video 6: Auth State \& Private Routes
+
+We'll start by installing the npm package `react-router` and
+`react-router-dom`. Then we'll bring it into React JS in our
+`src/components/App.js` file.
+
+Because we want to keep the history, we'll want to bring in
+`HashRouter` (instead of `BrowserRouter`, which relies on the HTTP
+server underneath). On top of that, we'll also import `Route`,
+`Switch`, and `Redirect`.
+
+Going down to the bottom, we'll wrap our components with our
+`Router` (starting at `Fragment`).
+
+Using `Switch`, we can create our routes using `Route`
+components. We'll tuck this under the container div tag. 
+
+```javascript
+<Switch>
+  <Route exact path="/" component={NameOfComponent}/>
+  // ... and so on
+</Switch>
+```
+
+We'll get back to this in a minute. First, we'll create new routes for
+logging in. These will be called `Login.js` and `Register.js` and will
+sit under a new folder `Accounts`.
+
+This component will be a form. Like all good forms, it needs to watch
+for changes (via `onChange`) and submissions (via `onSubmit`). Looking
+at the change watching, we can give our input tags a prop `onChange`
+and bind it (this proper react talk?) to our function
+`this.onChange`. For submissions, we'll do much the same with
+`onSubmit={this.onSubmit}`.
+
+For reasons that are not _quite_ clear to me, we'll be using arrow
+functions for both `onSubmit` and `onChange`. For the former, we'll
+first start by executing a `e.preventDefault()` so that the form is
+not submitted. For now, we'll do a console log though later we'll call
+a `login` action within the actions folder. `onChange` will be a
+simple `this.setState` call to change the variable value.
+
+Quickly building our `Login` component, this will be more or less a
+total copy of `Register.js` except that we'll simplify it a bit.
+
+Then we'll go back to `App.js` and bring in those components for
+routes. To make these accesible, we'll put these in our
+`layout/Header.js` component. Following this, you should be able to
+follow the links on a reload.
+
+Going back our components, we'll want to create a `PrivateRoute`
+component. This will be in `components/common`. This will be a
+functional component that checks to see if the state says we're logged
+in or not. Once we have that brought into `App.js`, we can use it to
+protect routes.
+
+Next, we'll add our auth reducer. This will keep our authentication
+keys within our redux state. On to the actions afterward. Like before,
+we create our types, then match actions to them. By passing `getState`
+along with `dispatch` as objects into our function, we'll be able to
+check for react state. We'll do this to check for any existing auth
+tokens we may or may not have.
 
 
+## Video 7:
 
+We'll start by adding new types to our `actions/types.js` file. 
 
+Next, we'll add our action functions. These will be very similar to
+our existing loadUser function. This will still check for the correct
+header only this time we'll also pass in a body that is a stringified
+json (e.g. `JSON.stringify`). Once we create the action, we'll do the
+same for our reducer.
 
+Back to our component, we need to connect the two using `connect` from
+`react-redux`. Then we'll call them in our `onSubmit` function.
 
+Before jumping into a `Register`, we'll create `logout` function and
+component. This will involve types and such. Beacuse we only want some
+links to be seen by the user, we'll make those dependent on being
+logged in inside of our `components/layout/Header.js` component.
 
+We want to show an error if we struggle to log in. To do this, we'll
+pull in our error messages and add it to the list of errors we
+dispatch (mine is not currently dispatching an error, but the code to
+check for it does exist in `Alerts.js`.
+
+Once we have this in, add `tokenConfig(getState)` to all the functions
+that need to be authenticated. Then, go into `leads.js` and pass that
+on as well as we'll need the auth token information to both get and
+create new leads. Django should handle matching up the information on
+its side.
+
+Then end!
